@@ -1,0 +1,7 @@
+.vscode
+mydata
+front/node_modules
+front/dist
+server/env
+server/__pycache__/
+server/db.sqlite3

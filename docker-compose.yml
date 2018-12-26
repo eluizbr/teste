@@ -1,0 +1,49 @@
+version: "3"
+services:
+  django:
+    restart: "no"
+    build:
+      context: .
+      dockerfile: docker/dev/django/Dockerfile
+    volumes:
+      - ./server:/server
+    ports:
+      - "8000:8000"
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      - mysql
+      # - rabbitmq
+  front:
+    restart: "no"
+    build:
+      context: .
+      dockerfile: docker/dev/front/Dockerfile
+    volumes:
+      - ./front:/front
+    ports:
+      - "8080:8080"
+    depends_on:
+      - django
+  mysql:
+    image: mysql:8.0.13
+    restart: "no"
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: beta
+    volumes:
+      - "./mydata/:/var/lib/mysql"
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+  # rabbitmq:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/dev/rabbitmq/Dockerfile
+  #   ports:
+  #     - 8081:15672
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: admin
+  #     RABBITMQ_DEFAULT_PASS: vp62018

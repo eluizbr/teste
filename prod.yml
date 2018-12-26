@@ -1,0 +1,70 @@
+version: "3"
+volumes:
+  static:
+  dist:
+services:
+  django:
+    restart: "no"
+    build:
+      context: .
+      dockerfile: docker/prod/django/Dockerfile
+    environment:
+      - DJANGO_SETTINGS_MODULE=demo.settings.dev
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./server:/server
+      - static:/static
+    ports:
+      - 8000:8000
+    command: gunicorn -w 4 demo.wsgi -b 0.0.0.0:8000
+    depends_on:
+      - mysql
+      # - rabbitmq
+  front:
+    restart: "no"
+    build:
+      context: .
+      dockerfile: docker/prod/front/Dockerfile
+    volumes:
+      - ./front:/front
+      - dist:/front/dist
+    ports:
+      - 8080:8080
+    depends_on:
+      - django
+  mysql:
+    image: mysql:8.0.13
+    restart: "no"
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: beta
+    volumes:
+      - "./mydata/:/var/lib/mysql"
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+  web:
+    restart: "no"
+    build:
+      context: .
+      dockerfile: docker/prod/nginx/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - django
+      - front
+    volumes:
+      - static:/static
+      - dist:/dist
+  # rabbitmq:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/prod/rabbitmq/Dockerfile
+  #   ports:
+  #     - 8081:15672
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: admin
+  #     RABBITMQ_DEFAULT_PASS: vp62018
